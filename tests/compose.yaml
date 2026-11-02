@@ -1,0 +1,49 @@
+# 動作確認用の使い捨て WordPress。tests/smoke.sh から起動・破棄する。
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wp
+      MARIADB_USER: wp
+      MARIADB_PASSWORD: wp
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      retries: 30
+
+  wp:
+    image: wordpress:php8.3-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wp
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+    ports:
+      - "8089:80"
+    volumes:
+      - wp:/var/www/html
+      - ../:/var/www/html/wp-content/mu-plugins/wp-seo-speed-fixes:ro
+      - ../mu-loader.php:/var/www/html/wp-content/mu-plugins/wp-seo-speed-fixes-loader.php:ro
+
+  cli:
+    image: wordpress:cli-php8.3
+    depends_on:
+      - wp
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wp
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+    volumes:
+      - wp:/var/www/html
+      - ../:/var/www/html/wp-content/mu-plugins/wp-seo-speed-fixes:ro
+      - ../mu-loader.php:/var/www/html/wp-content/mu-plugins/wp-seo-speed-fixes-loader.php:ro
+    entrypoint: ["sleep", "infinity"]
+
+volumes:
+  wp:
