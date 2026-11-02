@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# CI は読むだけ。トークンに書き込み権限を持たせない。
+permissions:
+  contents: read
+
+jobs:
+  # Requires PHP に書いた下限から最新までで構文が通ること。
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["7.4", "8.1", "8.3"]
+    steps:
+      # action はコミット SHA で固定する（タグは付け替えられるため）
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: php -l
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/app" -w /app php:${{ matrix.php }}-cli \
+            sh -c 'find . -name "*.php" -not -path "./.git/*" -print0 | xargs -0 -n1 php -l'
+
+  # 使い捨ての WordPress に MU-Plugin として入れ、実際の HTTP 応答で挙動を確かめる。
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: tests/smoke.sh
