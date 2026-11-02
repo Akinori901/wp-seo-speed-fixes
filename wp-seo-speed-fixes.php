@@ -51,3 +51,4 @@ function wssf_enabled($feature) {
 require_once __DIR__ . "/includes/attachments.php";
 require_once __DIR__ . "/includes/feeds.php";
 require_once __DIR__ . "/includes/noindex.php";
+require_once __DIR__ . "/includes/speed.php";
