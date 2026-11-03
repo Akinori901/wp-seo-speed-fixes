@@ -89,13 +89,29 @@ else
     pass "タグアーカイブの head にタグフィードのリンクを出さない"
 fi
 
+echo "== Lightning のロゴ・スライダー画像の枠（CSS はテーマ設定値だけで決まるので本体なしで確かめる）"
+$DC exec -T cli sh -c 'printf "%s" "iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAEElEQVR4nGP4z8AARwzIHABvqgf5gNwAKAAAAABJRU5ErkJggg==" | base64 -d > /tmp/wide.png'
+WIDE=$(wp media import /tmp/wide.png --title=wide --porcelain)
+WIDE_URL=$(wp eval "echo wp_get_attachment_url($WIDE);")
+wp option update lightning_theme_options "{\"head_logo\":\"$WIDE_URL\",\"top_slide_image_1\":\"$WIDE_URL\"}" --format=json >/dev/null
+FRONT_HTML=$(curl -s "$BASE/")
+POST_HTML=$(curl -s "$BASE/hello/")
+grep -q '\.site-header-logo img{height:2px;aspect-ratio:auto 4/2;' <<<"$FRONT_HTML" \
+    && pass "ロゴに実寸の高さと比率が付く" || fail "ロゴに実寸の高さと比率が付く"
+grep -q '\.ltg-slide-item-img{aspect-ratio:auto 4/2;}' <<<"$FRONT_HTML" \
+    && pass "トップページのスライダーに比率が付く" || fail "トップページのスライダーに比率が付く"
+grep -q '\.site-header-logo img{' <<<"$POST_HTML" && ! grep -q 'ltg-slide-item-img' <<<"$POST_HTML" \
+    && pass "記事ページはロゴだけ（スライダーはトップのみ）" || fail "記事ページはロゴだけ（スライダーはトップのみ）"
+
 echo "== WSSF_DISABLE で個別に止められる"
-wp config set WSSF_DISABLE "noindex_archives,attachment_redirect" >/dev/null
+wp config set WSSF_DISABLE "noindex_archives,attachment_redirect,lightning_image_sizes" >/dev/null
 sleep 3  # 公式イメージは opcache.revalidate_freq=2。書き換え直後は古い wp-config.php が使われる
 expect_noindex "noindex_archives を止めるとタグは index" "$BASE/tag/sample/" no
 ATT_URL=$(wp eval "echo get_attachment_link($ATT);")
 expect_redirect "attachment_redirect を止めると添付ページは200" "$ATT_URL" 200
 expect_header_noindex "止めていない feeds は効いたまま" "$BASE/tag/sample/feed/" yes
+grep -q 'wssf-lightning-image-sizes' <<<"$(curl -s "$BASE/")" \
+    && fail "lightning_image_sizes を止めると枠の CSS が出ない" || pass "lightning_image_sizes を止めると枠の CSS が出ない"
 wp config delete WSSF_DISABLE >/dev/null
 
 echo

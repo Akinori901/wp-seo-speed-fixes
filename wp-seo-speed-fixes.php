@@ -31,6 +31,7 @@ function wssf_features() {
         "feeds"                 => true,  // タグ/カテゴリ/コメントのフィードを noindex
         "noindex_archives"      => true,  // 2ページ目以降・タグ・日付・著者・検索を noindex
         "lightning_fonts"       => true,  // Lightning が表側で読む Google Fonts を止める
+        "lightning_image_sizes" => true,  // Lightning のロゴ・スライダー画像の枠を先に確保する（CLS）
         "sitekit_signin"        => true,  // Site Kit の Sign in with Google を表側で読まない
         "vk_blocks_separate"    => true,  // VK Blocks の CSS を分割読み込みにする
         "code_style"            => false, // <pre> に等幅・横スクロールの最小CSSを足す
@@ -52,4 +53,5 @@ require_once __DIR__ . "/includes/attachments.php";
 require_once __DIR__ . "/includes/feeds.php";
 require_once __DIR__ . "/includes/noindex.php";
 require_once __DIR__ . "/includes/speed.php";
+require_once __DIR__ . "/includes/lightning-images.php";
 require_once __DIR__ . "/includes/code-style.php";
